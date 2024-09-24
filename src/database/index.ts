@@ -1,8 +1,8 @@
-import { Bool, DateOnly, DateTime, Int, Num, Str } from "chanfana";
 import {
 	ZodBoolean,
 	ZodDate,
 	ZodNumber,
+	type ZodRawShape,
 	ZodString,
 	type ZodType,
 	type z,
@@ -11,19 +11,22 @@ function toSqlType(type: ZodType): string {
 	const name = type.constructor.name;
 	if (name === ZodString.name) {
 		return "TEXT";
-	} else if (name === ZodDate.name) {
+	}
+	if (name === ZodDate.name) {
 		return "DATETIME";
-	} else if (name === ZodNumber.name) {
+	}
+	if (name === ZodNumber.name) {
 		return "REAL";
-	} else if (name === ZodBoolean.name) {
+	}
+	if (name === ZodBoolean.name) {
 		return "BOOLEAN";
 	}
 	throw new Error(`Unsupported type: ${type}`);
 }
-export async function createTable(
+export async function createTable<T extends ZodRawShape>(
 	db: D1Database,
 	tableName: string,
-	schema: z.ZodObject<any, any>,
+	schema: z.ZodObject<T>,
 ) {
 	const columns = Object.entries(schema.shape).map(
 		([name, type]: [string, ZodType]) => `${name} ${toSqlType(type)}`,
@@ -33,10 +36,10 @@ export async function createTable(
 	await db.exec(sql);
 }
 
-export async function compareTable(
+export async function compareTable<T extends ZodRawShape>(
 	db: D1Database,
 	tableName: string,
-	schema: z.ZodObject<any, any>,
+	schema: z.ZodObject<T>,
 ) {
 	const columns = Object.entries(schema.shape).map(
 		([name, type]: [string, ZodType]) => `${name} ${toSqlType(type)}`,
@@ -74,12 +77,12 @@ async function all(db: D1Database, query: string, values: Value[]) {
 			.all();
 
 		if (!success) {
-			throw new Error(error + "\n" + query);
+			throw new Error(`${error}\n${query}`);
 		}
 
 		return results as Row[];
-	} catch (error: any) {
-		error.message += "\n" + query;
+	} catch (error) {
+		error.message += `\n${query}`;
 		throw error;
 	}
 }
@@ -118,8 +121,7 @@ export async function pageQuery(
 			values_.push(...values);
 		}
 	}
-	const countQuery_ =
-		["SELECT COUNT(*) as count FROM", ...sql_].join(" ") + ";";
+	const countQuery_ = `${["SELECT COUNT(*) as count FROM", ...sql_].join(" ")};`;
 	const count = (await all(db, countQuery_, values_))[0].count as number;
 	if (limit !== undefined) {
 		sql_.push("LIMIT", "?");
@@ -129,10 +131,13 @@ export async function pageQuery(
 		sql_.push("OFFSET", "?");
 		values_.push(offset);
 	}
-	const query_ =
-		["SELECT", _select_columns_to_sql(select), "FROM", from, ...sql_].join(
-			" ",
-		) + ";";
+	const query_ = `${[
+		"SELECT",
+		_select_columns_to_sql(select),
+		"FROM",
+		from,
+		...sql_,
+	].join(" ")};`;
 	return {
 		count,
 		list: await all(db, query_, values_),
