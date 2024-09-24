@@ -20,7 +20,7 @@ export class FreshmanAdd extends OpenAPIRoute {
 		},
 		responses: {
 			"200": {
-				description: "Returns the created task",
+				description: "返回创建结果",
 				content: {
 					"application/json": {
 						schema: z.object({

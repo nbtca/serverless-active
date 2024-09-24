@@ -45,3 +45,73 @@ export async function compareTable(db: D1Database, tableName: string, schema: z.
         }
     }
 }
+import { _condition_to_sql, _select_columns_to_sql, Condition, Row, Value, } from "sqlite-cloudflare-d1";
+async function all(db: D1Database, query: string, values: Value[]) {
+    try {
+        const { results, success, error } = await db
+            .prepare(query)
+            .bind(...values)
+            .all();
+
+        if (!success) {
+            throw new Error(error + "\n" + query);
+        }
+
+        return results as Row[];
+    } catch (error: any) {
+        error.message += "\n" + query;
+        throw error;
+    }
+}
+export async function pageQuery(
+    db: D1Database,
+    {
+        select = "*",
+        from,
+        where,
+        group_by,
+        having,
+        limit,
+        offset
+    }: {
+        select?: string | string[] | Record<string, string>;
+        from: string;
+        group_by?: string;
+        where?: Condition | Condition[];
+        having?: Condition | Condition[];
+        limit?: number;
+        offset?: number;
+    }
+) {
+    const sql_: string[] = [];
+    const values_: Value[] = [];
+    if (where) {
+        const { sql, values } = _condition_to_sql(where);
+        sql_.push("WHERE", sql);
+        values_.push(...values);
+    }
+    if (group_by) {
+        sql_.push("GROUP BY", group_by);
+        if (having) {
+            const { sql, values } = _condition_to_sql(having);
+            sql_.push("HAVING", sql);
+            values_.push(...values);
+        }
+    }
+    const countQuery_ = ["SELECT COUNT(*) as count FROM", ...sql_].join(" ") + ";";
+    const count = (await all(db, countQuery_, values_))[0].count as number;
+    if (limit !== undefined) {
+        sql_.push("LIMIT", "?");
+        values_.push(limit);
+    }
+    if (offset !== undefined) {
+        sql_.push("OFFSET", "?");
+        values_.push(offset);
+    }
+    const query_ = ["SELECT", _select_columns_to_sql(select), "FROM", from, ...sql_].join(" ") + ";";
+    return {
+        count,
+        list: await all(db, query_, values_)
+    };
+}
+
