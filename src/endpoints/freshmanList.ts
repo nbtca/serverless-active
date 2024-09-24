@@ -1,6 +1,9 @@
 import { Bool, Num, OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 import { JoinRequest } from "../types";
+import { query } from "sqlite-cloudflare-d1";
+import { Context } from "hono";
+import { Env } from "../../worker-configuration";
 
 export class FreshmanList extends OpenAPIRoute {
 	schema = {
@@ -8,14 +11,14 @@ export class FreshmanList extends OpenAPIRoute {
 		summary: "获取新人列表",
 		request: {
 			query: z.object({
-				page: Num({
-					description: "Page number",
-					default: 0,
-				}),
-				isCompleted: Bool({
-					description: "Filter by completed flag",
-					required: false,
-				}),
+				// page: Num({
+				// 	description: "Page number",
+				// 	default: 0,
+				// }),
+				// isCompleted: Bool({
+				// 	description: "Filter by completed flag",
+				// 	required: false,
+				// }),
 			}),
 		},
 		responses: {
@@ -24,12 +27,8 @@ export class FreshmanList extends OpenAPIRoute {
 				content: {
 					"application/json": {
 						schema: z.object({
-							series: z.object({
-								success: Bool(),
-								result: z.object({
-									tasks: JoinRequest.array(),
-								}),
-							}),
+							success: z.boolean(),
+							list: z.array(JoinRequest),
 						}),
 					},
 				},
@@ -37,33 +36,28 @@ export class FreshmanList extends OpenAPIRoute {
 		},
 	};
 
-	async handle(c) {
-		// Get validated data
-		const data = await this.getValidatedData<typeof this.schema>();
+	async handle(request: Context) {
+		// const data = await this.getValidatedData<typeof this.schema>();
+		// const { page, isCompleted } = data.query;
+		const env = request.env as Env;
+		const db = env.ACTIVE_DB as D1Database;
+		try {
 
-		// Retrieve the validated parameters
-		const { page, isCompleted } = data.query;
-
-		// Implement your own object list here
-
-		return {
-			success: true,
-			tasks: [
-				{
-					name: "Clean my room",
-					slug: "clean-room",
-					description: null,
-					completed: false,
-					due_date: "2025-01-05",
-				},
-				{
-					name: "Build something awesome with Cloudflare Workers",
-					slug: "cloudflare-workers",
-					description: "Lorem Ipsum",
-					completed: true,
-					due_date: "2022-12-24",
-				},
-			],
-		};
+			const result = await query(db, {
+				from: "freshman",
+				select: "*",
+				// limit: 10, 
+				// offset: 10 * page,
+			});
+			return {
+				success: true,
+				list: result,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error.message,
+			};
+		}
 	}
 }
