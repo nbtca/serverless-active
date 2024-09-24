@@ -1,10 +1,10 @@
 import { Bool, OpenAPIRoute } from "chanfana";
-import { z } from "zod";
-import { JoinRequest } from "../types";
-import { Context } from "hono";
-import { Env } from "../../worker-configuration";
+import type { Context } from "hono";
 import { insert } from "sqlite-cloudflare-d1";
-import { compareTable as checkTable } from '../database';
+import { z } from "zod";
+import type { Env } from "../../worker-configuration";
+import { compareTable as checkTable } from "../database";
+import { JoinRequest } from "../types";
 export class FreshmanAdd extends OpenAPIRoute {
 	schema = {
 		tags: ["Freshman"],
@@ -39,17 +39,17 @@ export class FreshmanAdd extends OpenAPIRoute {
 		// Retrieve the validated request body
 		const dataToCreate = data.body;
 		// Implement your own object insertion here
-		const env = request.env as Env
+		const env = request.env as Env;
 		const db = env.ACTIVE_DB as D1Database;
 		try {
-			await checkTable(db, 'freshman', JoinRequest);
+			await checkTable(db, "freshman", JoinRequest);
 			const row = await insert(db, {
 				into: "freshman",
 				data: dataToCreate,
 			});
 			return {
 				success: true,
-				result: row
+				result: row,
 			};
 		} catch (error) {
 			return {

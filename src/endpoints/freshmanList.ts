@@ -1,9 +1,9 @@
 import { Bool, Num, OpenAPIRoute } from "chanfana";
-import { z } from "zod";
-import { JoinRequest } from "../types";
-import { Context } from "hono";
-import { Env } from "../../worker-configuration";
 import { pageQuery } from "database";
+import type { Context } from "hono";
+import { z } from "zod";
+import type { Env } from "../../worker-configuration";
+import { JoinRequest } from "../types";
 
 export class FreshmanList extends OpenAPIRoute {
 	schema = {
@@ -13,8 +13,8 @@ export class FreshmanList extends OpenAPIRoute {
 			query: z.object({
 				page: Num({
 					description: "页码",
-					default: -1
-				}).optional()
+					default: -1,
+				}).optional(),
 			}),
 		},
 		responses: {
@@ -31,7 +31,6 @@ export class FreshmanList extends OpenAPIRoute {
 			},
 		},
 	};
-
 	async handle(request: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
 		const { page } = data.query;
@@ -43,10 +42,12 @@ export class FreshmanList extends OpenAPIRoute {
 				list: await pageQuery(db, {
 					from: "freshman",
 					select: "*",
-					...page < 0 ? {} : {
-						limit: pageSize,
-						offset: pageSize * (page - 1),
-					}
+					...(page < 0
+						? {}
+						: {
+								limit: pageSize,
+								offset: pageSize * (page - 1),
+							}),
 				}),
 			};
 		} catch (error) {

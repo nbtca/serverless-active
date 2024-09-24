@@ -7,7 +7,9 @@
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"cf-typegen": "wrangler types",
-		"lint": "npx @biomejs/biome format --write ./src"
+		"format": "npx @biomejs/biome format --write ./src",
+		"lint": "npx @biomejs/biome lint --write ./src",
+		"check": "npx @biomejs/biome check --write ./src"
 	},
 	"dependencies": {
 		"chanfana": "^2.0.2",
