@@ -23,8 +23,19 @@ export class FreshmanList extends OpenAPIRoute {
 				content: {
 					"application/json": {
 						schema: z.object({
-							success: z.boolean(),
 							list: z.array(JoinRequest),
+							total: z.number(),
+						}),
+					},
+				},
+			},
+			"500": {
+				description: "服务器错误",
+				content: {
+					"application/json": {
+						schema: z.object({
+							error: z.string(),
+							stacks: z.string(),
 						}),
 					},
 				},
@@ -37,24 +48,23 @@ export class FreshmanList extends OpenAPIRoute {
 		const { ACTIVE_DB: db } = request.env as Env;
 		try {
 			const pageSize = 10;
-			return {
-				success: true,
-				...(await pageQuery(db, {
-					from: "freshman",
-					select: "*",
-					...(page === undefined || page <= 0
-						? {}
-						: {
-								limit: pageSize,
-								offset: pageSize * (page - 1),
-							}),
-				})),
-			};
+			return (await pageQuery(db, {
+				from: "freshman",
+				select: "*",
+				...(page === undefined || page <= 0
+					? {}
+					: {
+						limit: pageSize,
+						offset: pageSize * (page - 1),
+					}),
+			})) satisfies {
+				total: number;
+			}
 		} catch (error) {
-			return {
-				success: false,
+			return request.json({
 				error: error.message,
-			};
+				stacks: error.stack,
+			}, 500);
 		}
 	}
 }
