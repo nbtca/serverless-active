@@ -13,7 +13,7 @@ export class FreshmanList extends OpenAPIRoute {
 			query: z.object({
 				page: Num({
 					description: "页码",
-					default: -1,
+					default: undefined,
 				}).optional(),
 			}),
 		},
@@ -39,16 +39,16 @@ export class FreshmanList extends OpenAPIRoute {
 			const pageSize = 10;
 			return {
 				success: true,
-				list: await pageQuery(db, {
+				...(await pageQuery(db, {
 					from: "freshman",
 					select: "*",
-					...(page < 0
+					...(page === undefined || page <= 0
 						? {}
 						: {
 								limit: pageSize,
 								offset: pageSize * (page - 1),
 							}),
-				}),
+				})),
 			};
 		} catch (error) {
 			return {
