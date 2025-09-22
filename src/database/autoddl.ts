@@ -7,6 +7,7 @@ import {
 	type ZodType,
 	type z,
 } from "zod";
+
 function toSqlType(type: ZodType): string {
 	const name = type.constructor.name;
 	if (name === ZodString.name) {
