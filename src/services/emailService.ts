@@ -9,41 +9,73 @@ export interface EmailData {
 	text?: string;
 }
 
+// Function to get Lark access token
+async function getLarkAccessToken(env: Env): Promise<string | null> {
+	try {
+		const response = await fetch(
+			"https://open.feishu.cn/open-apis/auth/v3/app_access_token/internal",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					app_id: env.LARK_APP_ID,
+					app_secret: env.LARK_APP_SECRET,
+				}),
+			},
+		);
+
+		const result = await response.json();
+		if (result.code === 0) {
+			return result.app_access_token;
+		}
+		console.error("Failed to get Lark access token:", result);
+		return null;
+	} catch (error) {
+		console.error("Error getting Lark access token:", error);
+		return null;
+	}
+}
+
 export async function sendEmail(
 	env: Env,
 	emailData: EmailData,
 ): Promise<boolean> {
 	try {
-		const response = await fetch("https://api.mailchannels.net/tx/v1/send", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				personalizations: [
-					{
-						to: [{ email: emailData.to }],
-					},
-				],
-				from: {
-					email: env.EMAIL_FROM,
-					name: env.EMAIL_FROM_NAME,
-				},
-				subject: emailData.subject,
-				content: [
-					{
-						type: "text/html",
-						value: emailData.html,
-					},
-					{
-						type: "text/plain",
-						value: emailData.text || emailData.subject,
-					},
-				],
-			}),
-		});
+		// Get access token first
+		const accessToken = await getLarkAccessToken(env);
+		if (!accessToken) {
+			console.error("Failed to obtain Lark access token");
+			return false;
+		}
 
-		return response.ok;
+		// Send email via Lark Mail API
+		const response = await fetch(
+			"https://open.feishu.cn/open-apis/mail/v1/user_mailboxes/send",
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					to: [emailData.to],
+					subject: emailData.subject,
+					body: emailData.html,
+					body_type: "html",
+					from: env.EMAIL_FROM,
+				}),
+			},
+		);
+
+		const result = await response.json();
+		if (response.ok && result.code === 0) {
+			return true;
+		}
+
+		console.error("Failed to send email via Lark:", result);
+		return false;
 	} catch (error) {
 		console.error("Failed to send email:", error);
 		return false;

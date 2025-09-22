@@ -1,4 +1,4 @@
-import { Bool, Num, OpenAPIRoute } from "chanfana";
+import { Num, OpenAPIRoute } from "chanfana";
 import { pageQuery } from "database";
 import type { Context } from "hono";
 import { z } from "zod";

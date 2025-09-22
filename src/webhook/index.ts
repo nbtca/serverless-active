@@ -1,1 +1,1 @@
-function webhook() {}
+function _webhook() {}

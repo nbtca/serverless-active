@@ -1,5 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types/experimental";
-import { Bool, OpenAPIRoute } from "chanfana";
+import { OpenAPIRoute } from "chanfana";
 import type { Context } from "hono";
 import { insert } from "sqlite-cloudflare-d1";
 import { z } from "zod";

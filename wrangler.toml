@@ -18,6 +18,8 @@ compatibility_date = "2023-05-18"
 [vars]
 EMAIL_FROM = "noreply@nbtca.space"
 EMAIL_FROM_NAME = "NBTCA 计协"
+LARK_APP_ID = "your_lark_app_id"
+LARK_APP_SECRET = "your_lark_app_secret"
 
 # Bind the Workers AI model catalog. Run machine learning models, powered by serverless GPUs, on Cloudflare’s global network
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#workers-ai
