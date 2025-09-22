@@ -5,6 +5,7 @@ import {
 	_condition_to_sql,
 	_select_columns_to_sql,
 } from "sqlite-cloudflare-d1";
+
 async function all(db: D1Database, query: string, values: Value[]) {
 	try {
 		const { results, success, error } = await db

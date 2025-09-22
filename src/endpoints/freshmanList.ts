@@ -1,9 +1,9 @@
-import { Bool, Num, OpenAPIRoute } from "chanfana";
+import { Num, OpenAPIRoute } from "chanfana";
 import { pageQuery } from "database";
 import type { Context } from "hono";
 import { z } from "zod";
 import type { Env } from "../../worker-configuration";
-import { JoinRequest } from "../types";
+import { FreshmanRecord } from "../types";
 
 export class FreshmanList extends OpenAPIRoute {
 	schema = {
@@ -23,7 +23,7 @@ export class FreshmanList extends OpenAPIRoute {
 				content: {
 					"application/json": {
 						schema: z.object({
-							list: z.array(JoinRequest),
+							list: z.array(FreshmanRecord),
 							total: z.number(),
 						}),
 					},
@@ -54,17 +54,20 @@ export class FreshmanList extends OpenAPIRoute {
 				...(page === undefined || page <= 0
 					? {}
 					: {
-						limit: pageSize,
-						offset: pageSize * (page - 1),
-					}),
+							limit: pageSize,
+							offset: pageSize * (page - 1),
+						}),
 			})) satisfies {
 				total: number;
-			}
+			};
 		} catch (error) {
-			return request.json({
-				error: error.message,
-				stacks: error.stack,
-			}, 500);
+			return request.json(
+				{
+					error: error.message,
+					stacks: error.stack,
+				},
+				500,
+			);
 		}
 	}
 }

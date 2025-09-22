@@ -10,4 +10,18 @@ export const JoinRequest = z.object({
 	phone: Str({ example: "12345678901" }),
 	qq: Str({ example: "123456789" }),
 	memo: Str({ example: "lorem ipsum" }),
+	captcha: Str({ example: "abc123" }).optional(),
+});
+
+// Database schema that includes the submission time
+export const FreshmanRecord = z.object({
+	name: z.string(),
+	number: z.string(),
+	major: z.string(),
+	class: z.string(),
+	email: z.string(),
+	phone: z.string(),
+	qq: z.string(),
+	memo: z.string(),
+	submissionTime: z.date(),
 });

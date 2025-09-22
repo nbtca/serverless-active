@@ -54,7 +54,7 @@ export class FreshmanFetch extends OpenAPIRoute {
 
 		const exists = true;
 
-		// @ts-ignore: check if the object exists
+		// @ts-expect-error: check if the object exists
 		if (exists === false) {
 			return Response.json(
 				{
