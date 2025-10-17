@@ -10,4 +10,5 @@ export const JoinRequest = z.object({
 	phone: Str({ example: "12345678901" }),
 	qq: Str({ example: "123456789" }),
 	memo: Str({ example: "lorem ipsum" }),
+	time: Str({ example: "2025-10-17T00:00:00.000Z", description: "提交时间" }).optional(),
 });

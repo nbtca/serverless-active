@@ -45,7 +45,10 @@ export class FreshmanAdd extends OpenAPIRoute {
 			await checkTable(db, "freshman", JoinRequest);
 			const row = await insert(db, {
 				into: "freshman",
-				data: dataToCreate,
+				data: {
+					...dataToCreate,
+					time: new Date().toISOString(),
+				},
 			});
 			return {
 				success: true,
