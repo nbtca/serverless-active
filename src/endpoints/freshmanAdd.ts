@@ -1,9 +1,11 @@
-import { Bool, OpenAPIRoute } from "chanfana";
+import type { D1Database } from "@cloudflare/workers-types/experimental";
+import { OpenAPIRoute } from "chanfana";
 import type { Context } from "hono";
 import { insert } from "sqlite-cloudflare-d1";
 import { z } from "zod";
 import type { Env } from "../../worker-configuration";
 import { checkTable } from "../database";
+import { generateWelcomeEmail, sendEmail } from "../services/emailService";
 import { JoinRequest } from "../types";
 export class FreshmanAdd extends OpenAPIRoute {
 	schema = {
@@ -27,6 +29,7 @@ export class FreshmanAdd extends OpenAPIRoute {
 							success: z.boolean(),
 							result: JoinRequest.optional(),
 							error: z.string().optional(),
+							emailSent: z.boolean().optional(),
 						}),
 					},
 				},
@@ -50,14 +53,30 @@ export class FreshmanAdd extends OpenAPIRoute {
 					time: new Date().toISOString(),
 				},
 			});
+
+			// Send welcome email after successful database insertion
+			let emailSent = false;
+			try {
+				const emailData = generateWelcomeEmail(dataToCreate);
+				emailSent = await sendEmail(env, emailData);
+				if (!emailSent) {
+					console.warn("Failed to send welcome email to:", dataToCreate.email);
+				}
+			} catch (emailError) {
+				console.error("Email sending error:", emailError);
+				// Don't fail the entire request if email fails
+			}
+
 			return {
 				success: true,
 				result: row,
+				emailSent,
 			};
 		} catch (error) {
 			return {
 				success: false,
 				error: error.toString(),
+				emailSent: false,
 			};
 		}
 	}

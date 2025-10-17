@@ -5,4 +5,8 @@ import { D1Database } from "@cloudflare/workers-types/experimental";
 // After adding bindings to `wrangler.toml`, regenerate this interface via `npm run cf-typegen`
 interface Env {
     ACTIVE_DB: D1Database;
+    EMAIL_FROM: string;
+    EMAIL_FROM_NAME: string;
+    LARK_APP_ID: string;
+    LARK_APP_SECRET: string;
 }
