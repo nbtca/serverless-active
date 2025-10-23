@@ -1,51 +1,58 @@
+import type { AlterTableColumnAlteringBuilder, Kysely } from "kysely";
+import { sql } from "kysely";
+import type { ColumnDataType } from "kysely";
 import {
 	ZodBoolean,
 	ZodDate,
 	ZodNumber,
+	ZodOptional,
 	type ZodRawShape,
 	ZodString,
 	type ZodType,
 	type z,
 } from "zod";
-function toSqlType(type: ZodType): string {
-	const name = type.constructor.name;
-	if (name === ZodString.name) {
-		return "TEXT";
+import { ZodArray, ZodBigInt } from "zod";
+
+function toSqlType(type: ZodType): ColumnDataType {
+	if (type instanceof ZodString) return "text";
+	if (type instanceof ZodDate) return "datetime";
+	if (type instanceof ZodNumber) return "real";
+	if (type instanceof ZodBoolean) return "boolean";
+	if (type instanceof ZodBigInt) return "bigint";
+	if (type instanceof ZodArray) return "json";
+	if (type instanceof ZodOptional) {
+		return toSqlType(type._def.innerType);
 	}
-	if (name === ZodDate.name) {
-		return "DATETIME";
-	}
-	if (name === ZodNumber.name) {
-		return "REAL";
-	}
-	if (name === ZodBoolean.name) {
-		return "BOOLEAN";
-	}
-	throw new Error(`Unsupported type: ${type}`);
+	throw new Error(`Unsupported type: ${type.constructor.name}`);
 }
-export async function createTable<T extends ZodRawShape>(
-	db: D1Database,
-	tableName: string,
-	schema: z.ZodObject<T>,
-) {
-	const columns = Object.entries(schema.shape).map(
-		([name, type]: [string, ZodType]) => `${name} ${toSqlType(type)}`,
-	);
-	const sql = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns.join(", ")})`;
-	console.log(sql);
-	await db.exec(sql);
+export async function createTable<
+	DB,
+	T extends keyof DB & string,
+	R extends ZodRawShape = ZodRawShape,
+>(db: Kysely<DB>, tableName: T, schema: z.ZodObject<R>) {
+	let sql = db.schema.createTable(tableName).ifNotExists();
+	for (const [name, type] of Object.entries(schema.shape)) {
+		sql = sql.addColumn(name, toSqlType(type));
+	}
+	await sql.execute();
 }
 
-export async function checkTable<T extends ZodRawShape>(
-	db: D1Database,
-	tableName: string,
-	schema: z.ZodObject<T>,
-) {
+export async function checkTable<
+	DB,
+	T extends keyof DB & string,
+	R extends ZodRawShape = ZodRawShape,
+>(db: Kysely<DB>, tableName: T, schema: z.ZodObject<R>) {
 	const columns = Object.entries(schema.shape).map(
-		([name, type]: [string, ZodType]) => `${name} ${toSqlType(type)}`,
+		([name, type]: [string, ZodType]) =>
+			[name, toSqlType(type)] as [string, ColumnDataType],
 	);
-	const sql = `PRAGMA table_info(${tableName})`;
-	const result = (await db.prepare(sql).all()).results;
+	// const sql = `PRAGMA table_info(${tableName})`;
+	const { rows: result } = await sql<{
+		cid: number;
+		name: string;
+		type: string;
+	}>`PRAGMA table_info(${sql.lit(tableName)});`.execute(db);
+	// const result = (await db.selectNoFrom(sql<string>"").all()).results;
 	if (result.length === 0) {
 		// If the table does not exist, create it
 		await createTable(db, tableName, schema);
@@ -54,14 +61,15 @@ export async function checkTable<T extends ZodRawShape>(
 	const columnNames = result.map((row) => row.name);
 	const missingColumns = columns.filter(
 		// Compare the columns
-		(column) => !columnNames.includes(column.split(" ")[0]),
+		([columnName, _]) => !columnNames.includes(columnName),
 	);
 	if (missingColumns.length > 0) {
-		for (const column of missingColumns) {
-			// Add missing columns
-			const alterSql = `ALTER TABLE ${tableName} ADD COLUMN ${column}`;
-			console.log(alterSql);
-			await db.exec(alterSql);
+		let alterSql = db.schema.alterTable(
+			tableName,
+		) as unknown as AlterTableColumnAlteringBuilder;
+		for (const [columnName, columnType] of missingColumns) {
+			alterSql = alterSql.addColumn(columnName, columnType);
 		}
+		alterSql.execute();
 	}
 }

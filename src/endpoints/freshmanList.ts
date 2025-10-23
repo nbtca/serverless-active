@@ -1,9 +1,10 @@
 import { Bool, Num, OpenAPIRoute } from "chanfana";
-import { pageQuery } from "database";
 import type { Context } from "hono";
 import { z } from "zod";
 import type { Env } from "../../worker-configuration";
-import { JoinRequest } from "../types";
+import { type Database, JoinRequest } from "../types";
+import { Kysely } from "kysely";
+import { D1Dialect } from "kysely-d1";
 
 export class FreshmanList extends OpenAPIRoute {
 	schema = {
@@ -45,26 +46,29 @@ export class FreshmanList extends OpenAPIRoute {
 	async handle(request: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
 		const { page } = data.query;
-		const { ACTIVE_DB: db } = request.env as Env;
+		const env = request.env as Env;
+		const db = new Kysely<Database>({
+			dialect: new D1Dialect({ database: env.ACTIVE_DB as D1Database }),
+		});
 		try {
+			const query = db.selectFrom("freshman");
 			const pageSize = 10;
-			return (await pageQuery(db, {
-				from: "freshman",
-				select: "*",
-				...(page === undefined || page <= 0
-					? {}
-					: {
-						limit: pageSize,
-						offset: pageSize * (page - 1),
-					}),
-			})) satisfies {
-				total: number;
+			if (page === undefined || page <= 0) {
+				return await query.selectAll().execute();
 			}
+			return await query
+				.selectAll()
+				.limit(pageSize)
+				.offset(pageSize * (page - 1))
+				.execute();
 		} catch (error) {
-			return request.json({
-				error: error.message,
-				stacks: error.stack,
-			}, 500);
+			return request.json(
+				{
+					error: error.message,
+					stacks: error.stack,
+				},
+				500,
+			);
 		}
 	}
 }

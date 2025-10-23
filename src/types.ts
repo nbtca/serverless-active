@@ -12,3 +12,6 @@ export const JoinRequest = z.object({
 	memo: Str({ example: "lorem ipsum" }),
 	time: Str({ example: "2025-10-17T00:00:00.000Z", description: "提交时间" }).optional(),
 });
+export interface Database{
+	freshman: z.infer<typeof JoinRequest>;
+}

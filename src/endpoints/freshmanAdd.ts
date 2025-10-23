@@ -1,10 +1,12 @@
-import { Bool, OpenAPIRoute } from "chanfana";
+import { Kysely } from "kysely";
+import type { D1Database } from "@cloudflare/workers-types/experimental";
+import { OpenAPIRoute } from "chanfana";
 import type { Context } from "hono";
-import { insert } from "sqlite-cloudflare-d1";
 import { z } from "zod";
 import type { Env } from "../../worker-configuration";
 import { checkTable } from "../database";
-import { JoinRequest } from "../types";
+import { type Database, JoinRequest } from "../types";
+import { D1Dialect } from "kysely-d1";
 export class FreshmanAdd extends OpenAPIRoute {
 	schema = {
 		tags: ["Freshman"],
@@ -40,16 +42,19 @@ export class FreshmanAdd extends OpenAPIRoute {
 		const dataToCreate = data.body;
 		// Implement your own object insertion here
 		const env = request.env as Env;
-		const db = env.ACTIVE_DB as D1Database;
+		const db = new Kysely<Database>({
+			dialect: new D1Dialect({ database: env.ACTIVE_DB as D1Database }),
+		});
 		try {
 			await checkTable(db, "freshman", JoinRequest);
-			const row = await insert(db, {
-				into: "freshman",
-				data: {
+			const row = await db
+				.insertInto("freshman")
+				.values({
 					...dataToCreate,
 					time: new Date().toISOString(),
-				},
-			});
+				})
+				.returningAll()
+				.executeTakeFirst();
 			return {
 				success: true,
 				result: row,
