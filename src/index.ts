@@ -4,6 +4,7 @@ import { FreshmanAdd } from "./endpoints/freshmanAdd";
 // import { TaskDelete } from "./endpoints/freshmanDelete";
 // import { FreshmanFetch } from "./endpoints/freshmanFetch";
 import { FreshmanList } from "./endpoints/freshmanList";
+import { Scalar } from "@scalar/hono-api-reference";
 
 // Start a Hono app
 const app = new Hono();
@@ -25,9 +26,15 @@ app.use("*", async (c, next) => {
 	}
 	await next();
 });
+const openapiUrl = "openapi.json";
+
 const openapi = fromHono(app, {
-	docs_url: "/docs",
+	openapi_url: openapiUrl,
+	docs_url: null,
+	redoc_url: "redoc",
 });
+
+app.get("/docs", Scalar({ url: openapiUrl }));
 // Register OpenAPI endpoints
 openapi.post("/api/freshman", FreshmanAdd);
 openapi.get("/api/freshman", FreshmanList);
