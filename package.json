@@ -12,15 +12,15 @@
 		"check": "npx @biomejs/biome check --write ./src"
 	},
 	"dependencies": {
-		"chanfana": "^2.0.4",
-		"hono": "^4.6.3",
+		"chanfana": "^2.8.3",
+		"hono": "^4.10.4",
 		"kysely": "^0.28.8",
 		"kysely-d1": "^0.4.0",
-		"zod": "^3.23.8"
+		"zod": "^3.25.76"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"@cloudflare/workers-types": "^4.20251014.0",
+		"@cloudflare/workers-types": "^4.20251107.0",
 		"@types/node": "20.8.3",
 		"@types/service-worker-mock": "^2.0.4",
 		"wrangler": "^3.114.15"
