@@ -1,5 +1,4 @@
 import type {
-	AlterTableColumnAlteringBuilder,
 	ColumnBuilderCallback,
 	Kysely,
 } from "kysely";
@@ -12,8 +11,7 @@ import {
 	type ZodRawShape,
 	ZodString,
 	type ZodType,
-	ZodTypeAny,
-	ZodTypeDef,
+	type ZodTypeAny,
 	type z,
 } from "zod";
 import { ZodArray, ZodBigInt, ZodDefault, ZodNullable, ZodEnum } from "zod";

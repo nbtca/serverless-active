@@ -3,7 +3,6 @@ import type { D1Database } from "@cloudflare/workers-types/experimental";
 import { OpenAPIRoute } from "chanfana";
 import type { Context } from "hono";
 import { z } from "zod";
-import type { Env } from "../../worker-configuration";
 import { checkTable } from "../database";
 import { type Database, JoinRequest } from "../types";
 import { D1Dialect } from "kysely-d1";
