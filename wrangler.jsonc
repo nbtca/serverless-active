@@ -7,10 +7,14 @@
 	"name": "active",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-09-03",
+	"compatibility_flags": ["nodejs_compat"],
 	"observability": {
 		"enabled": true
 	},
-	"vars": {},
+	"vars": {
+		"LOGTO_ISSUER": "",
+		"LOGTO_CALLBACK_URL": ""
+	},
 	"secrets_store_secrets": [],
 	"d1_databases": [
 		{
