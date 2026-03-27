@@ -5,9 +5,28 @@ import { FreshmanAdd } from "./endpoints/freshmanAdd";
 // import { FreshmanFetch } from "./endpoints/freshmanFetch";
 import { FreshmanList } from "./endpoints/freshmanList";
 import { Scalar } from "@scalar/hono-api-reference";
+import { createAuth } from "./auth";
+import type { Env } from "../worker-configuration";
 
 // Start a Hono app
-const app = new Hono();
+const app = new Hono<{ Bindings: Env }>();
+
+// better-auth: 处理所有 /api/auth/* 路由（登录、回调、登出、session 等）
+app.all("/api/auth/*", async (c) => {
+	const auth = createAuth(c.env);
+	return auth.handler(c.req.raw);
+});
+
+// 保护 GET /api/freshman：要求有效的 session（支持 Bearer Token 和 Cookie）
+app.use("/api/freshman", async (c, next) => {
+	if (c.req.method !== "GET") return next();
+	const auth = createAuth(c.env);
+	const session = await auth.api.getSession({ headers: c.req.raw.headers });
+	if (!session) {
+		return c.json({ error: "Unauthorized" }, 401);
+	}
+	return next();
+});
 
 // Setup OpenAPI registry
 app.use("*", async (c, next) => {

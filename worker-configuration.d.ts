@@ -7,6 +7,11 @@ declare namespace Cloudflare {
 	}
 	interface Env {
 		ACTIVE_DB: D1Database;
+		BETTER_AUTH_SECRET: string;
+		LOGTO_CLIENT_ID: string;
+		LOGTO_CLIENT_SECRET: string;
+		LOGTO_ISSUER: string;
+		LOGTO_CALLBACK_URL: string;
 	}
 }
 interface Env extends Cloudflare.Env {}
